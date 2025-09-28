@@ -1,5 +1,5 @@
-const fetch = require("node-fetch");
-const cheerio = require("cheerio");
+import fetch from "node-fetch";
+import * as cheerio from 'cheerio';
 
 class ScraperContext { constructor ({site, query, tags, amount, posts, post, pages})  
 {
@@ -86,13 +86,15 @@ function randomPageURL(url, pageLinks, context)
 
 function generateAPI(status, exitCode, urlContent, message)
 {
-    return API = 
+    const APIHeader = 
     {
         status: status,
         code: exitCode,
         content: urlContent,
         message: message
     }
+
+    return APIHeader
 }
 
 function fixUrl(link, base) {
@@ -139,4 +141,4 @@ async function Scrape(context)
     }
 }
 
-module.exports = { ScraperContext, Scrape };
+export { ScraperContext, Scrape };
