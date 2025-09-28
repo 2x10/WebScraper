@@ -1,7 +1,7 @@
 {
   "name": "webscraper",
   "version": "1.0.0",
-  "description": "A simple webscraper API for images and videos for image board sites",
+  "description": "A simple webscraping API for images and videos for image board sites",
   "main": "index.js",
   "scripts": {
     "test": "node index.js"
@@ -14,7 +14,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/username/repo.git"
+    "url": "https://github.com/2x10/WebScraper.git"
   },
   "author": "2x10",
   "license": "MIT",
