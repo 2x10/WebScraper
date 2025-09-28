@@ -4,7 +4,7 @@
   "description": "A simple webscraping API for images and videos for image board sites",
   "main": "index.js",
   "scripts": {
-    "test": "node index.js"
+    "test": "node test.js"
   },
   "keywords": [
     "web",
