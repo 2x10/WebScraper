@@ -1,1 +1,1 @@
-const test = require("./index.js")
+console.log("Hello World! this is a test.")
