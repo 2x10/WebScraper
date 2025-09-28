@@ -1,5 +1,5 @@
 # WebScraper.js
-A simple webscraping API for images and videos for image board sites
+A simple webscraping API for images and videos board sites
 
 ### Example initiation: 
 ```js
