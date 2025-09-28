@@ -1,5 +1,5 @@
 {
-    "name": "2x10-webscrape",
+    "name": "2x10-webscraper",
     "version": "1.0.9",
     "description": "A simple webscraping API for images and videos for image board sites",
     "main": "index.js",
