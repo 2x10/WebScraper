@@ -1,9 +1,9 @@
 # WebScraper.js
 A simple webscraping API for images and videos for image board sites
 
-### Example code: 
+### Example initiation: 
 ```js
-const { ScraperContext } = require("./WebScraper.js")
+const { ScraperContext, Scrape } = require("./WebScraper.js")
 
 const context = new ScraperContext
 ({
@@ -35,4 +35,6 @@ const context = new ScraperContext
         },
     },
 });
+
+await Scrape(context)
 ```
