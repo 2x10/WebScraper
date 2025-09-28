@@ -1,7 +1,7 @@
 # WebScraper.js
 A simple webscraping API for images and videos for image board sites
 
-###Example code: 
+### Example code: 
 ```js
 const { ScraperContext } = require("./WebScraper.js")
 
@@ -9,8 +9,8 @@ const context = new ScraperContext
 ({
     site: "https://example.org",
     query: "index?q=",
-    tags: usrTags,
-	amount: usrAmount,
+    tags: ["aesthetic", "skyscraper"],
+	amount: 1,
     posts: 
     {
         container: ".thumbail-container",
