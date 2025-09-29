@@ -1,8 +1,8 @@
 {
     "name": "2x10-webscraper",
-    "version": "1.0.9",
+    "version": "1.1.1",
     "description": "A simple webscraping API for images and videos for image board sites",
-    "main": "index.js",
+    "main": "src/index.js",
     "scripts": {
         "test": "node test.js"
     },
@@ -12,6 +12,7 @@
         "scraper",
         "scraping"
     ],
+    "type": "module",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/2x10/WebScraper.git"

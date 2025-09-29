@@ -1,45 +1,6 @@
 import fetch from "node-fetch";
 import * as cheerio from 'cheerio';
 
-class ScraperContext { constructor ({site, query, tags, amount, posts, post, pages})  
-{
-    this.site = site;
-    this.query = query;
-    this.tags = tags
-        .split(",")
-        .map(tag => tag.trim())
-        .filter(Boolean)
-        .join(" ");
-    this.amount = amount
-    this.html = 
-    {
-        posts: 
-        {
-            container: posts.container,
-            tag: posts.tag,
-            attribute: posts.attribute,
-        },  
-        post: 
-        {
-          container: post.container,
-          tag: post.tag,
-          attribute: post.attribute,
-        },
-        pages: 
-        {
-            container: pages.container,
-            tag: pages.tag,
-            attribute: pages.attribute,
-            query: 
-            {
-                name: pages.query.name,
-                min: pages.query.min,
-                max: pages.query.max,
-            }
-        }
-    }
-}}
-
 async function fetchLinks(url, context, baseUrl) {
     const response = await fetch(url, {
         headers: {
@@ -111,34 +72,36 @@ function fixUrl(link, base) {
     }
 }
 
-async function Scrape(context)
-{
-    try 
-    {
+export async function Scrape(context) {
+    try {
         const url = `${context.site}/${context.query}=${encodeURIComponent(context.tags)}`;
         const pageLinks = await fetchLinks(url, context.html.pages);
-        const pageUrl = randomPageURL(url, pageLinks, context.html.pages.query)
+        const pageUrl = randomPageURL(url, pageLinks, context.html.pages.query);
 
-        var content = []
-        if (!context.amount) amount = 1
-        for (var i = 0; i < context.amount; i++)
-        {
+        let content = [];
+        if (!context.amount) context.amount = 1;
+
+        for (let i = 0; i < context.amount; i++) {
             const postLinks = await fetchLinks(pageUrl, context.html.posts, context.site);
-            if (postLinks.length == 0) return generateAPI("no_content", 204, content, "No content found")
+            if (postLinks.length === 0) {
+                return generateAPI("no_content", 204, content, "No content found");
+            }
 
             const selectedPost = postLinks[Math.floor(Math.random() * postLinks.length)];
-
             const imageLinks = await fetchLinks(selectedPost, context.html.post);
 
-            content.push(imageLinks[imageLinks.length-1])
+            if (imageLinks.length > 0) {
+                // Push object instead of array
+                content.push({
+                    src: selectedPost,
+                    img: imageLinks[imageLinks.length - 1]
+                });
+            }
         }
-        return generateAPI("success", 200, content, "The content has been delivered.")
-    }
-    catch (err)
-    {
-        console.log(err)
-        return generateAPI("error", 500, [], "Internal error")
+
+        return generateAPI("success", 200, content, "The content has been delivered.");
+    } catch (err) {
+        console.log(err);
+        return generateAPI("error", 500, [], "Internal error");
     }
 }
-
-export { ScraperContext, Scrape };
