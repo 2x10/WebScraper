@@ -36,5 +36,11 @@ const context = new ScraperContext
     },
 });
 
-await Scrape(context)
+async function Run()
+{
+    const response = await Scrape(context);
+    console.log(response);
+}
+
+Run();
 ```
