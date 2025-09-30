@@ -1,10 +1,11 @@
 {
     "name": "2x10-webscraper",
-    "version": "1.1.1",
+    "version": "1.2.5",
     "description": "A simple webscraping API for images and videos for image board sites",
     "main": "src/index.js",
     "scripts": {
-        "test": "node test.js"
+        "test": "node test.js",
+        "dev": "node runtimeTest.js"
     },
     "keywords": [
         "web",

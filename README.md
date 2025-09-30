@@ -3,14 +3,14 @@ A simple webscraping API for images and videos board sites
 
 ### Example initiation: 
 ```js
-const { ScraperContext, Scrape } = require("./WebScraper.js")
+const { ScraperContext, ScrapeFast } = require("./WebScraper.js")
 
 const context = new ScraperContext
 ({
     site: "https://example.org",
     query: "index?q=",
     tags: ["aesthetic", "skyscraper"],
-	amount: 1,
+	amount: 5,
     posts: 
     {
         container: ".thumbail-container",
@@ -38,9 +38,10 @@ const context = new ScraperContext
 
 async function Run()
 {
-    const response = await Scrape(context);
+    const response = await ScrapeFast(context);
     console.log(response);
 }
 
 Run();
 ```
+

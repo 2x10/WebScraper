@@ -72,13 +72,25 @@ function fixUrl(link, base) {
     }
 }
 
-export async function Scrape(context) {
+function cleanup(content)
+{
+    // filter nulls
+    content = content.filter(Boolean);
+
+    //delete duplicates
+    content = Array.from(new Map(content.map(item => [item.src, item])).values());
+    
+    return content;
+}
+
+// Serial code (slow, safe option)
+export async function ScrapeSerial(context) {
     try {
         const url = `${context.site}/${context.query}=${encodeURIComponent(context.tags)}`;
         const pageLinks = await fetchLinks(url, context.html.pages);
         const pageUrl = randomPageURL(url, pageLinks, context.html.pages.query);
 
-        let content = [];
+        let rawContent = [];
         if (!context.amount) context.amount = 1;
 
         for (let i = 0; i < context.amount; i++) {
@@ -92,15 +104,59 @@ export async function Scrape(context) {
 
             if (imageLinks.length > 0) {
                 // Push object instead of array
-                content.push({
+                rawContent.push({
                     src: selectedPost,
                     img: imageLinks[imageLinks.length - 1]
                 });
             }
         }
 
+        const content = cleanup(rawContent)
+
         return generateAPI("success", 200, content, "The content has been delivered.");
     } catch (err) {
+        console.log(err);
+        return generateAPI("error", 500, [], "Internal error");
+    }
+}
+
+// Parallel Code (fast, spammy might-get-flagged and ip banned option)
+export async function ScrapeFast(context) {
+    try {
+        const url = `${context.site}/${context.query}=${encodeURIComponent(context.tags)}`;
+        const pageLinks = await fetchLinks(url, context.html.pages);
+
+        if (!context.amount) context.amount = 1;
+
+        // Create an array of promises for each "amount" item
+        const tasks = Array.from({ length: context.amount }, async () => {
+            const pageUrl = randomPageURL(url, pageLinks, context.html.pages.query);
+            const postLinks = await fetchLinks(pageUrl, context.html.posts, context.site);
+            if (postLinks.length === 0) return null;
+
+            const selectedPost = postLinks[Math.floor(Math.random() * postLinks.length)];
+            const imageLinks = await fetchLinks(selectedPost, context.html.post);
+
+            if (imageLinks.length > 0) {
+                return {
+                    src: selectedPost,
+                    img: imageLinks[imageLinks.length - 1]
+                };
+            }
+            return null;
+        });
+
+        // Run all tasks in parallel
+        const content = cleanup(await Promise.all(tasks));
+
+        if (content.length === 0) {
+            return generateAPI("no_content", 204, content, "No content found");
+        }
+
+        return generateAPI("success", 200, content, "The content has been delivered.");
+    } 
+    catch (err) 
+    {
         console.log(err);
         return generateAPI("error", 500, [], "Internal error");
     }
