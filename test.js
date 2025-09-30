@@ -1,4 +1,4 @@
-import { ScraperExample, ScraperContext, ScrapeFast, ScrapeSerial } from "./src/index.js"
+import { ScraperExample, ScraperContext, ScrapeFast, ScrapeSerial } from "./dist/index.js"
 
 console.log("Hello World! This is a test. . .\n")
 console.log(ScraperExample)

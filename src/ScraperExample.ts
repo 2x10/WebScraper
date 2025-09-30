@@ -1,7 +1,10 @@
-import { ScraperContext } from './index.js'; 
+import { ScraperContext } from './index.js';
 
+// ---------------------- Types ----------------------
 export class ScraperExample {
-    constructor(tags, amount) {
+    rule34: ScraperContext;
+
+    constructor(tags: string, amount: number = 1) {
         this.rule34 = new ScraperContext({
             site: "https://rule34.us",
             query: "index.php?r=posts/index&q",

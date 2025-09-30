@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "outDir": "dist",
+    "declaration": true,
+    "esModuleInterop": true,
+    "allowJs": true,             // allow .js files for incremental migration
+    "checkJs": false,            // don’t type-check JS yet
+    "skipLibCheck": true,        // skip type-checking node_modules
+    "strict": true,           
+    "noImplicitAny": true       // don’t require explicit types yet
+  },
+  "include": ["src/**/*"]
+}
