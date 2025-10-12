@@ -45,3 +45,4 @@ async function Run()
 Run();
 ```
 
+ScrapeSerial is deprecated and has been removed. 
