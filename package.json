@@ -1,6 +1,6 @@
 {
     "name": "2x10-webscraper",
-    "version": "1.4.0",
+    "version": "1.4.4",
     "description": "A simple webscraping API for images and videos for image board sites",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",

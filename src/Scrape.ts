@@ -6,6 +6,7 @@ interface HTMLSection {
     container: string;
     tag: string[];
     attribute: string;
+    queryFix? : string;
 }
 
 interface PagesQuery {
@@ -20,6 +21,7 @@ interface PagesSection extends HTMLSection {
 
 interface HTMLStructure {
     posts: HTMLSection;
+    thumbnail: HTMLSection;
     post: HTMLSection;
     pages: PagesSection;
 }
@@ -27,9 +29,18 @@ interface HTMLStructure {
 interface ScrapeContext {
     site: string;
     query: string;
-    tags: string;
+    tags?: string;
     amount?: number;
     html: HTMLStructure;
+}
+
+interface ScrapeSettings {
+    fetchThumbnails?: boolean;
+    fetchImageURLs?: boolean;
+    gotoSourcePage?: boolean;
+    useHeaders: boolean;
+    tags?: string;
+    amount?: number;
 }
 
 interface ContentItem {
@@ -41,25 +52,33 @@ interface ContentItem {
 const pageCache = new Map<string, string>();
 
 const agent = new Agent({
-    keepAliveTimeout: 60_000,
-    keepAliveMaxTimeout: 60_000,
-    connections: 50,
+    keepAliveTimeout: 30000,
+    keepAliveMaxTimeout: 30000,
+    connections: 70,
     pipelining: 1 
 });
 
 // ---------------------- Helper Functions ----------------------
-async function fetchLinks(url: string, context: HTMLSection, baseUrl?: string): Promise<string[]> {
+async function getHTML(url: string, settings: ScrapeSettings) : Promise<cheerio.CheerioAPI> {
     if (pageCache.has(url)) {
-        return parseLinks(pageCache.get(url)!, context, baseUrl);
+        const loadedHTML = cheerio.load(pageCache.get(url));
+        return loadedHTML!;
     }
 
-    const response = await fetch(url, {
-        dispatcher: agent,
-        headers: {
+    let headers = { 'User-Agent': '' , 'Accept': '' }
+    if (settings.useHeaders) 
+    { 
+        headers =
+        {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
                           "(KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36",
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", 
-        }, 
+        }
+    } 
+
+    const response = await fetch(url, {
+        dispatcher: agent,
+        headers: headers, 
         bodyTimeout: 30_000, 
         headersTimeout: 30_000 
     } as any);
@@ -67,16 +86,16 @@ async function fetchLinks(url: string, context: HTMLSection, baseUrl?: string): 
     const html = await response.text();
     pageCache.set(url, html);
 
-    return parseLinks(html, context, baseUrl);
+    const loadedHTML = cheerio.load(html);
+    return loadedHTML;
 }
 
-function parseLinks(html: string, context: HTMLSection, baseUrl?: string): string[] {
-    const $ = cheerio.load(html);
+function fetchLinks(html: cheerio.CheerioAPI, context: HTMLSection, baseUrl?: string): string[] {
     const links: string[] = [];
 
     const selector = context.tag.map(t => `${context.container} ${t}`).join(", ");
-    $(selector).each((_, element) => {
-        let attribute = $(element).attr(context.attribute);
+    html(selector).each((_, element) => {
+        let attribute = html(element).attr(context.attribute);
         attribute = fixUrl(attribute, baseUrl);
         if (attribute && !attribute.endsWith("svg")) {
             links.push(attribute);
@@ -135,26 +154,58 @@ function cleanup(content: ContentItem[]): ContentItem[] {
     return Array.from(new Map(filtered.map(item => [item.src, item])).values());
 }
 
-// ---------------------- Scrapers ----------------------
-export async function ScrapeFast(context: ScrapeContext) {
-    try {
-        const url = `${context.site}/${context.query}=${encodeURIComponent(context.tags)}`;
-        const pageLinks = await fetchLinks(url, context.html.pages);
+// ---------------------- Scraper ----------------------
+export async function ScrapeFast(context: ScrapeContext, settings: ScrapeSettings) 
+{
+    try 
+    {   
+        const URL = `${context.site}${context.query}${encodeURIComponent(settings.tags ?? '')}`;
 
-        const amount = context.amount ?? 1;
+        const thumbnailQueryFix = context.html.thumbnail.queryFix ?? '';
+        const postsQueryFix = context.html.posts.queryFix ?? '';
+        const postQueryFix = context.html.post.queryFix ?? '';
 
-        const tasks: Promise<ContentItem | null>[] = Array.from({ length: amount }, async () => {
-            const pageUrl = randomPageURL(url, pageLinks, context.html.pages.query);
-            const postLinks = await fetchLinks(pageUrl, context.html.posts, context.site);
-            if (postLinks.length === 0) return null;
+        const pageHTML = await getHTML(URL, settings)
+        const pageLinks = fetchLinks(pageHTML, context.html.pages);
 
-            const selectedPost = postLinks[Math.floor(Math.random() * postLinks.length)];
-            const imageLinks = await fetchLinks(selectedPost, context.html.post);
+        const tasks: Promise<ContentItem | null>[] = Array.from({ length: settings.amount ?? 1 }, async () => 
+        {
+            const pageURL = randomPageURL(URL, pageLinks, context.html.pages.query);
+            
+            const postHTML = await getHTML(pageURL, settings)
+            const postURLs = fetchLinks(postHTML, context.html.posts, context.site);
+            if (postURLs.length === 0 ) return null;
+            
 
-            if (imageLinks.length > 0) {
-                return { src: selectedPost, img: imageLinks[imageLinks.length - 1] };
+            const selectedPost = Math.floor(Math.random() * postURLs.length)
+            const selectedPostURL = postURLs[selectedPost];
+
+            let selectedThumbnailURL = ''
+            if (settings.fetchThumbnails)
+            {
+                const thumbnailURLs = fetchLinks(postHTML, context.html.thumbnail, thumbnailQueryFix);
+                if (postURLs.length != thumbnailURLs.length) return null;
+                selectedThumbnailURL = thumbnailURLs[selectedPost].split('?')[0];
             }
-            return null;
+            
+            let selectedImageURL = ''
+            if (settings.fetchImageURLs)
+            {
+                if (settings.gotoSourcePage == true)
+                {
+                    const selectedPostHTML = await getHTML(selectedPostURL, settings)
+                    selectedImageURL = fetchLinks(selectedPostHTML, context.html.post, postQueryFix).slice(-1)[0].split('?')[0];
+                }
+                else
+                {
+                    const selectedImageURLs = fetchLinks(postHTML, context.html.post, postQueryFix)
+                    if (selectedImageURLs.length != selectedImageURLs.length) return null
+                    selectedImageURL = selectedImageURLs[selectedPost].split('?')[0];
+                }
+                if (selectedImageURL === undefined) return null
+            }
+
+            return { src: selectedPostURL, img: selectedImageURL, thumbnail: selectedThumbnailURL };
         });
 
         const content = cleanup(await Promise.all(tasks) as ContentItem[]);
@@ -164,39 +215,9 @@ export async function ScrapeFast(context: ScrapeContext) {
         }
 
         return generateAPI("success", 200, content, "The content has been delivered.");
-    } catch (err) {
-        console.error(err);
-        return generateAPI("error", 500, [], "Internal error");
-    }
-}
-
-export async function ScrapeSerial(context: ScrapeContext) {
-    try {
-        const url = `${context.site}/${context.query}=${encodeURIComponent(context.tags)}`;
-        const pageLinks = await fetchLinks(url, context.html.pages);
-        const pageUrl = randomPageURL(url, pageLinks, context.html.pages.query);
-
-        const amount = context.amount ?? 1;
-        const rawContent: ContentItem[] = [];
-
-        for (let i = 0; i < amount; i++) {
-            const postLinks = await fetchLinks(pageUrl, context.html.posts, context.site);
-            if (postLinks.length === 0) {
-                return generateAPI("no_content", 204, [], "No content found");
-            }
-
-            const selectedPost = postLinks[Math.floor(Math.random() * postLinks.length)];
-            const imageLinks = await fetchLinks(selectedPost, context.html.post);
-
-            if (imageLinks.length > 0) {
-                rawContent.push({ src: selectedPost, img: imageLinks[imageLinks.length - 1] });
-            }
-        }
-
-        const content = cleanup(rawContent);
-
-        return generateAPI("success", 200, content, "The content has been delivered.");
-    } catch (err) {
+    } 
+    catch (err) 
+    {
         console.error(err);
         return generateAPI("error", 500, [], "Internal error");
     }

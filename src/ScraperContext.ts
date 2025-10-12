@@ -3,6 +3,7 @@ interface HTMLSection {
     container: string;
     tag: string[]; 
     attribute: string;
+    queryFix? : string;
 }
 
 interface PagesSection extends HTMLSection {
@@ -15,6 +16,7 @@ interface PagesSection extends HTMLSection {
 
 interface HTMLStructure {
     posts: HTMLSection;
+    thumbnail: HTMLSection;
     post: HTMLSection;
     pages: PagesSection;
 }
@@ -23,9 +25,8 @@ interface HTMLStructure {
 interface ScraperContextParams {
     site: string;
     query: string;
-    tags: string;
-    amount: number;
     posts: HTMLSection;
+    thumbnail: HTMLSection
     post: HTMLSection;
     pages: PagesSection;
 }
@@ -33,26 +34,16 @@ interface ScraperContextParams {
 export class ScraperContext {
     site: string;
     query: string;
-    tags: string;
-    amount: number;
     html: HTMLStructure;
 
-    constructor({ site, query, tags, amount, posts, post, pages }: ScraperContextParams) {
+    constructor({ site, query, posts, thumbnail, post, pages }: ScraperContextParams) {
         this.site = site;
         this.query = query;
-        this.amount = amount;
-
-        // Clean up and join tags
-        // This is optional though, it can also run just fine when doing "tag tag tag" but some user may go for "tag, tag,tag   ,  tag" 
-        this.tags = tags
-            .split(',')
-            .map(tag => tag.trim())
-            .filter(Boolean)
-            .join(' ');
 
         // Use object spread to copy HTML sections
         this.html = {
             posts: { ...posts },
+            thumbnail: { ...thumbnail },
             post: { ...post },
             pages: { ...pages, query: { ...pages.query } },
         };
